@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Key Redactor</title>
+<meta name="description" content="Paste logs, code, config, or chat transcripts and get a redacted copy with API keys, tokens, and passwords replaced by labeled placeholders. Runs fully in your browser, nothing is uploaded.">
+<link rel="canonical" href="https://0xelitesystem.github.io/api-key-redactor/">
+<meta property="og:title" content="API Key Redactor">
+<meta property="og:description" content="Find and scrub likely secrets from text before you share it. Fully client-side, no uploads, works offline.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://0xelitesystem.github.io/api-key-redactor/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "API Key Redactor",
+  "description": "Paste logs, code, config, or chat transcripts and get a redacted copy with API keys, tokens, and passwords replaced by labeled placeholders. Fully client-side.",
+  "url": "https://0xelitesystem.github.io/api-key-redactor/",
+  "applicationCategory": "SecurityApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "0xelitesystem", "url": "https://elitesystem.ai" }
+}
+</script>
+<style>
+:root {
+  --bg: #fafaf6;
+  --surface: #ffffff;
+  --ink: #0a1d1e;
+  --ink-soft: #2c4a4c;
+  --rule: #c8d4d3;
+  --teal: #0f5c60;
+  --teal-deep: #0a4548;
+  --gold: #b07d2a;
+  --gold-deep: #8a611f;
+  --ok: #1a5c2e;
+  --warn: #8a5a00;
+  --err: #8b1a1a;
+  --code-bg: #f0ebe1;
+}
+[data-theme="dark"] {
+  --bg: #0c1c1d;
+  --surface: #14292a;
+  --ink: #e8ebe6;
+  --ink-soft: #b0c0bd;
+  --rule: #2a4042;
+  --teal: #4ab4ba;
+  --teal-deep: #6dc8ce;
+  --gold: #d4a155;
+  --gold-deep: #e6b876;
+  --ok: #6dd380;
+  --warn: #d4a155;
+  --err: #e88080;
+  --code-bg: #0a1718;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  line-height: 1.55;
+}
+.wrap { max-width: 1100px; margin: 0 auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--teal);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--teal);
+}
+.tag {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  color: var(--gold-deep);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+[data-theme="dark"] .tag { color: var(--gold); }
+.theme-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.theme-btn:hover { border-color: var(--teal); color: var(--teal); }
+.lede {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  margin-bottom: 1rem;
+  max-width: 68ch;
+}
+.privacy-banner {
+  border: 1px solid var(--teal);
+  border-left: 4px solid var(--teal);
+  background: var(--surface);
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  border-radius: 3px;
+  margin-bottom: 1.75rem;
+  color: var(--ink);
+}
+.privacy-banner strong { color: var(--teal); }
+.input-box {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.75rem;
+  border-radius: 3px;
+}
+label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+textarea {
+  width: 100%;
+  min-height: 180px;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  resize: vertical;
+  border-radius: 2px;
+}
+textarea:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.input-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover { border-color: var(--teal); }
+button:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+button.primary {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--surface);
+  font-weight: 600;
+}
+[data-theme="dark"] button.primary { color: var(--bg) !important; }
+button.primary:hover { background: var(--teal-deep); border-color: var(--teal-deep); }
+.live-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  margin: 0;
+}
+.live-toggle input { accent-color: var(--teal); width: 1rem; height: 1rem; }
+.privacy-note {
+  font-size: 0.78rem;
+  color: var(--gold-deep);
+  margin-top: 0.5rem;
+}
+[data-theme="dark"] .privacy-note { color: var(--gold); }
+.results { display: none; }
+.results.show { display: block; }
+.section {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-radius: 3px;
+}
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.stats-line {
+  font-size: 0.88rem;
+  color: var(--ink);
+  margin-bottom: 0.85rem;
+}
+.stats-line .hi { color: var(--err); font-weight: 600; }
+.stats-line .med { color: var(--warn); font-weight: 600; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  padding: 0.4rem 0.6rem;
+  border-bottom: 2px solid var(--rule);
+  white-space: nowrap;
+}
+td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+td.mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.78rem; word-break: break-all; }
+tr.excluded td { opacity: 0.45; }
+.badge {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.badge-high { color: var(--err); }
+.badge-medium { color: var(--warn); }
+.finding-check { accent-color: var(--teal); width: 1rem; height: 1rem; cursor: pointer; }
+pre.output {
+  background: var(--code-bg);
+  padding: 0.85rem;
+  border-radius: 2px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+  max-height: 420px;
+  overflow-y: auto;
+}
+.redact-tag { color: var(--gold-deep); font-weight: 700; }
+[data-theme="dark"] .redact-tag { color: var(--gold); }
+.honesty {
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--warn);
+  background: var(--surface);
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  border-radius: 3px;
+  margin-bottom: 1.25rem;
+}
+.honesty strong { color: var(--warn); }
+.empty-msg { font-size: 0.85rem; color: var(--ok); font-weight: 600; }
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+footer a { color: var(--teal); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  body { padding: 1rem 0.75rem; }
+  h1 { font-size: 1.4rem; }
+  th, td { padding: 0.35rem 0.4rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>API Key Redactor</h1>
+    <div class="tag">Scrub secrets before you share</div>
+  </div>
+  <button class="theme-btn" id="theme-toggle" type="button">Dark</button>
+</header>
+
+<p class="lede">Paste logs, code, config files, or chat transcripts. The tool finds likely secrets by pattern (vendor key prefixes, tokens, private key blocks, connection strings, secret-looking assignments) and produces a redacted copy you can safely share in a bug report, a support ticket, or a chat.</p>
+
+<div class="privacy-banner"><strong>Fully client-side.</strong> Nothing you paste leaves this browser. No uploads, no analytics, no network requests, no external dependencies. Open the page once and it works offline. You can confirm in the network tab of your browser's developer tools.</div>
+
+<div class="input-box">
+  <label for="input-text">Input</label>
+  <textarea id="input-text" placeholder="Paste logs, code, .env content, or a transcript here..." spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+  <div class="input-row">
+    <button class="primary" id="scan-btn" type="button">Scan</button>
+    <button id="example-btn" type="button">Load example</button>
+    <button id="clear-btn" type="button">Clear</button>
+    <label class="live-toggle"><input type="checkbox" id="live-toggle"> Live scan as I type</label>
+  </div>
+  <div class="privacy-note">All scanning happens locally in this page. Your text is never sent to any server.</div>
+</div>
+
+<div class="results" id="results">
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Findings</div>
+    </div>
+    <p class="stats-line" id="stats-line" aria-live="polite"></p>
+    <div class="table-scroll" id="table-wrap">
+      <table id="findings-table">
+        <thead>
+          <tr>
+            <th scope="col">Include</th>
+            <th scope="col">Type</th>
+            <th scope="col">Confidence</th>
+            <th scope="col">Preview (masked)</th>
+            <th scope="col">Line</th>
+          </tr>
+        </thead>
+        <tbody id="findings-body"></tbody>
+      </table>
+    </div>
+    <p class="empty-msg" id="empty-msg" hidden>No likely secrets found by pattern. Still review the text manually before sharing.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Redacted output</div>
+      <div class="input-row" style="margin-top: 0;">
+        <button class="primary" id="copy-btn" type="button">Copy redacted text</button>
+        <button id="download-btn" type="button">Download .txt</button>
+      </div>
+    </div>
+    <pre class="output" id="output-pre"></pre>
+  </div>
+</div>
+
+<div class="honesty"><strong>Honest limits.</strong> Pattern matching cannot catch every secret. Novel formats, split or encoded strings, and homegrown credentials will slip through, so always review the output before sharing. The reverse is also true: some findings may be false positives (hashes, test fixtures, sample values). Use the include checkboxes to skip anything that is not actually a secret.</div>
+
+<footer>
+  <div>API Key Redactor. Open source, MIT licensed. <a href="https://github.com/0xelitesystem/api-key-redactor" target="_blank" rel="noopener">View source</a>.</div>
+  <div><a href="https://elitesystem.ai" target="_blank" rel="noopener">elitesystem.ai</a></div>
+</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// Theme toggle
+const themeBtn = $("theme-toggle");
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+}
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+
+/*
+ * Detectors. Each entry:
+ *   id     -> used in the [REDACTED:id] placeholder
+ *   label  -> shown in the findings table
+ *   conf   -> "high" (exact vendor prefix or unambiguous structure)
+ *             or "medium" (contextual heuristic, may false-positive)
+ *   re     -> regex with d (indices) + g flags
+ *   group  -> capture group whose span gets redacted (0 = whole match)
+ *   ctx    -> optional extra gate fn(match, text, start, end) -> bool
+ *
+ * Array order is claim priority: earlier detectors win overlapping spans,
+ * so vendor-prefixed (high) patterns run before generic heuristics.
+ */
+const DETECTORS = [
+  {
+    id: "private-key", label: "Private key block", conf: "high", group: 0,
+    // PEM private key material: BEGIN ... PRIVATE KEY through the matching END
+    // line. Covers RSA, EC, DSA, OPENSSH, PGP (with BLOCK suffix), and PKCS8.
+    re: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----/gd
+  },
+  {
+    id: "aws-access-key", label: "AWS access key ID", conf: "high", group: 0,
+    // AWS access key IDs: literal AKIA prefix plus 16 uppercase alphanumerics.
+    re: /\bAKIA[0-9A-Z]{16}\b/gd
+  },
+  {
+    id: "github-token", label: "GitHub token", conf: "high", group: 0,
+    // GitHub tokens: ghp_ (classic PAT), gho_/ghu_/ghs_/ghr_ (OAuth, user,
+    // server, refresh) plus 36 chars, or fine-grained github_pat_ tokens.
+    re: /\b(?:gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})\b/gd
+  },
+  {
+    id: "sk-ant-key", label: "Anthropic-style key", conf: "high", group: 0,
+    // Anthropic-style keys: sk-ant- prefix followed by a long token body.
+    re: /\bsk-ant-[A-Za-z0-9_-]{16,}\b/gd
+  },
+  {
+    id: "openai-style-key", label: "OpenAI-style key", conf: "high", group: 0,
+    // OpenAI-style keys: sk- prefix plus a long token body (sk-proj- included).
+    // Negative lookahead so the sk-ant- detector above owns that shape.
+    re: /\bsk-(?!ant-)[A-Za-z0-9_-]{20,}\b/gd
+  },
+  {
+    id: "google-api-key", label: "Google API key", conf: "high", group: 0,
+    // Google API keys: AIza prefix plus exactly 35 chars of [0-9A-Za-z_-].
+    re: /\bAIza[0-9A-Za-z_-]{35}\b/gd
+  },
+  {
+    id: "slack-token", label: "Slack token", conf: "high", group: 0,
+    // Slack tokens: xoxb / xoxp / xoxa / xoxr / xoxs prefixes.
+    re: /\bxox[bpars]-[A-Za-z0-9][A-Za-z0-9-]{8,}\b/gd
+  },
+  {
+    id: "stripe-key", label: "Stripe key", conf: "high", group: 0,
+    // Stripe keys: sk_live_, pk_live_, sk_test_, pk_test_ prefixes.
+    re: /\b[sp]k_(?:live|test)_[A-Za-z0-9]{10,}\b/gd
+  },
+  {
+    id: "twilio-account-sid", label: "Twilio account SID", conf: "high", group: 0,
+    // Twilio account SIDs: AC plus 32 lowercase hex chars.
+    re: /\bAC[a-f0-9]{32}\b/gd
+  },
+  {
+    id: "sendgrid-key", label: "SendGrid key", conf: "high", group: 0,
+    // SendGrid keys: SG. plus two dot-separated base64url-ish segments.
+    re: /\bSG\.[A-Za-z0-9_-]{16,32}\.[A-Za-z0-9_-]{16,64}\b/gd
+  },
+  {
+    id: "npm-token", label: "npm token", conf: "high", group: 0,
+    // npm automation/publish tokens: npm_ prefix plus 36 alphanumerics.
+    re: /\bnpm_[A-Za-z0-9]{36}\b/gd
+  },
+  {
+    id: "jwt", label: "JWT", conf: "high", group: 0,
+    // JSON Web Tokens: three base64url segments joined by dots. The first
+    // segment starts with eyJ because it is base64 of a JSON object ({").
+    re: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/gd
+  },
+  {
+    id: "connection-password", label: "Connection string password", conf: "high", group: 3,
+    // Connection strings: protocol://user:password@host. Only the password
+    // capture (group 3) is redacted so user and host stay readable.
+    re: /\b([a-z][a-z0-9+.-]*):\/\/([^\s:@\/]+):([^\s@\/]{4,})@/gid
+  },
+  {
+    id: "bearer-token", label: "Bearer token", conf: "medium", group: 1,
+    // Authorization headers: Bearer scheme, token capture only.
+    // Medium because the token shape itself is generic, only context is known.
+    re: /\bAuthorization\s*[:=]\s*["']?Bearer\s+([A-Za-z0-9._~+\/=-]{8,})/gid
+  },
+  {
+    id: "aws-secret-key", label: "AWS secret access key", conf: "medium", group: 0,
+    // Heuristic: a standalone 40-char base64-ish run. Only flagged when the
+    // word "aws" appears nearby, and still medium confidence (SHA-1 hex and
+    // other 40-char strings can collide with this shape).
+    re: /(?<![A-Za-z0-9\/+=])[A-Za-z0-9\/+=]{40}(?![A-Za-z0-9\/+=])/gd,
+    ctx: (m, text, start, end) =>
+      /aws/i.test(text.slice(Math.max(0, start - 100), Math.min(text.length, end + 40)))
+  },
+  {
+    id: "env-secret", label: ".env secret value", conf: "medium", group: 2,
+    // .env style lines: UPPER_SNAKE key containing SECRET/TOKEN/KEY/PASSWORD.
+    // Only the value (group 2) is redacted, the key name is kept.
+    re: /^([A-Z][A-Z0-9_]{2,})=([^\s#]{6,})/gmd,
+    ctx: (m) => /(SECRET|TOKEN|KEY|PASSWORD|PASSWD)/.test(m[1]) && !/PUBLIC/.test(m[1])
+  },
+  {
+    id: "generic-secret", label: "Secret-looking assignment", conf: "medium", group: 2,
+    // Suspicious variable names (password/secret/token/apikey/api_key and
+    // friends) assigned a quoted value of 16+ chars. Value only (group 2).
+    re: /\b(password|passwd|pwd|secret|token|api[_-]?key|apikey|access[_-]?key|auth[_-]?token)[A-Za-z0-9_]*\s*[:=]\s*["']([^"'\r\n]{16,})["']/gid
+  }
+];
+
+let currentText = "";
+let currentFindings = [];
+let redactedPlain = "";
+
+function lineOf(text, index) {
+  let line = 1;
+  for (let i = 0; i < index; i++) if (text.charCodeAt(i) === 10) line++;
+  return line;
+}
+
+function scan(text) {
+  const findings = [];
+  const taken = [];
+  for (const det of DETECTORS) {
+    det.re.lastIndex = 0;
+    let m;
+    while ((m = det.re.exec(text)) !== null) {
+      if (m[0].length === 0) { det.re.lastIndex++; continue; }
+      const span = m.indices ? m.indices[det.group] : null;
+      if (!span) continue;
+      const [start, end] = span;
+      if (det.ctx && !det.ctx(m, text, start, end)) continue;
+      if (taken.some(([s, e]) => start < e && end > s)) continue;
+      taken.push([start, end]);
+      findings.push({
+        det, start, end,
+        value: text.slice(start, end),
+        line: lineOf(text, start),
+        included: true
+      });
+    }
+  }
+  findings.sort((a, b) => a.start - b.start);
+  return findings;
+}
+
+function maskPreview(v) {
+  const flat = v.replace(/\s+/g, " ").trim();
+  if (flat.length <= 8) return "*".repeat(Math.max(flat.length, 4));
+  const stars = Math.min(flat.length - 8, 12);
+  return flat.slice(0, 4) + "*".repeat(stars) + flat.slice(-4);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildRedacted() {
+  let plain = "";
+  let html = "";
+  let pos = 0;
+  for (const f of currentFindings) {
+    if (!f.included) continue;
+    const tag = "[REDACTED:" + f.det.id + "]";
+    plain += currentText.slice(pos, f.start) + tag;
+    html += escapeHtml(currentText.slice(pos, f.start)) +
+      '<span class="redact-tag">' + escapeHtml(tag) + "</span>";
+    pos = f.end;
+  }
+  plain += currentText.slice(pos);
+  html += escapeHtml(currentText.slice(pos));
+  redactedPlain = plain;
+  $("output-pre").innerHTML = html;
+}
+
+function renderStats() {
+  const n = currentFindings.length;
+  const types = new Set(currentFindings.map((f) => f.det.id)).size;
+  const hi = currentFindings.filter((f) => f.det.conf === "high").length;
+  const med = n - hi;
+  const excluded = currentFindings.filter((f) => !f.included).length;
+  let s = n + " finding" + (n === 1 ? "" : "s") + " across " + types +
+    " type" + (types === 1 ? "" : "s") + ".";
+  if (n > 0) {
+    s += ' <span class="hi">' + hi + " high</span> confidence, " +
+      '<span class="med">' + med + " medium</span>.";
+    if (excluded > 0) s += " " + excluded + " excluded from redaction.";
+  }
+  $("stats-line").innerHTML = s;
+}
+
+function renderTable() {
+  const body = $("findings-body");
+  body.innerHTML = "";
+  $("table-wrap").hidden = currentFindings.length === 0;
+  $("empty-msg").hidden = currentFindings.length !== 0;
+  currentFindings.forEach((f, i) => {
+    const tr = document.createElement("tr");
+    if (!f.included) tr.className = "excluded";
+
+    const tdCheck = document.createElement("td");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "finding-check";
+    cb.checked = f.included;
+    cb.dataset.idx = i;
+    cb.setAttribute("aria-label", "Include finding " + (i + 1) + " (" + f.det.label + ", line " + f.line + ") in redaction");
+    tdCheck.appendChild(cb);
+
+    const tdType = document.createElement("td");
+    tdType.textContent = f.det.label;
+
+    const tdConf = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "badge badge-" + f.det.conf;
+    badge.textContent = f.det.conf;
+    tdConf.appendChild(badge);
+
+    const tdPrev = document.createElement("td");
+    tdPrev.className = "mono";
+    tdPrev.textContent = maskPreview(f.value);
+
+    const tdLine = document.createElement("td");
+    tdLine.className = "mono";
+    tdLine.textContent = f.line;
+
+    tr.append(tdCheck, tdType, tdConf, tdPrev, tdLine);
+    body.appendChild(tr);
+  });
+}
+
+function runScan() {
+  currentText = $("input-text").value;
+  if (!currentText.trim()) {
+    $("results").classList.remove("show");
+    return;
+  }
+  currentFindings = scan(currentText);
+  renderTable();
+  renderStats();
+  buildRedacted();
+  $("results").classList.add("show");
+}
+
+// Include/exclude toggles: re-render output and stats, keep table rows live.
+$("findings-body").addEventListener("change", (e) => {
+  const cb = e.target;
+  if (!cb.classList.contains("finding-check")) return;
+  const f = currentFindings[Number(cb.dataset.idx)];
+  if (!f) return;
+  f.included = cb.checked;
+  cb.closest("tr").className = f.included ? "" : "excluded";
+  buildRedacted();
+  renderStats();
+});
+
+// Copy redacted text
+$("copy-btn").addEventListener("click", async () => {
+  const btn = $("copy-btn");
+  try {
+    await navigator.clipboard.writeText(redactedPlain);
+  } catch (err) {
+    const ta = document.createElement("textarea");
+    ta.value = redactedPlain;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = "Copied";
+  setTimeout(() => { btn.textContent = old; }, 1200);
+});
+
+// Download redacted .txt via a local Blob object URL, no network involved.
+$("download-btn").addEventListener("click", () => {
+  const blob = new Blob([redactedPlain], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "redacted.txt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+// Clear wipes the textarea and all results.
+$("clear-btn").addEventListener("click", () => {
+  $("input-text").value = "";
+  currentText = "";
+  currentFindings = [];
+  redactedPlain = "";
+  $("results").classList.remove("show");
+  $("input-text").focus();
+});
+
+// Example input. Every value is deliberately fake and invalid: EXAMPLE
+// filler, sequential hex, and demo passwords. Nothing here is a real secret.
+$("example-btn").addEventListener("click", () => {
+  $("input-text").value = [
+    "# deploy log, demo input (every value below is fake and invalid)",
+    "[10:14:02] boot: loading config",
+    "aws_access_key_id = AKIA" + "EXAMPLEEXAMPLE00",
+    "aws_secret_access_key = \"EXAMPLEKEYEXAMPLEKEYEXAMPLEKEYEXAMPLE000\"",
+    "export GITHUB_TOKEN=ghp" + "_EXAMPLEEXAMPLEEXAMPLEEXAMPLEEXAMPLE0",
+    "openai_key: \"sk-" + "EXAMPLEEXAMPLEEXAMPLEEXAMPLE\"",
+    "model_key: \"sk-ant" + "-EXAMPLEEXAMPLEEXAMPLE00\"",
+    "maps_key = AIza" + "EXAMPLEEXAMPLEEXAMPLEEXAMPLEEXAMPLE",
+    "slack_bot: xox" + "b-000000000000-EXAMPLEEXAMPLE",
+    "stripe: sk_live" + "_EXAMPLEEXAMPLE00",
+    "twilio sid AC01234567" + "89abcdef0123456789abcdef",
+    "sendgrid: SG." + "EXAMPLEEXAMPLE00.EXAMPLEEXAMPLEEXAMPLE00",
+    "npm token npm" + "_EXAMPLEEXAMPLEEXAMPLEEXAMPLEEXAMPLE0",
+    "session jwt: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vIn0.EXAMPLE_signature_0",
+    "curl -H \"Authorization: Bearer EXAMPLETOKENEXAMPLETOKEN\" https://api.example.com/v1/me",
+    "DATABASE_URL=postgres://appuser:hunter2example@db.example.com:5432/app",
+    "APP_SECRET=example-app-secret-000000",
+    "password = \"correct-horse-example-0000\"",
+    "-----BEGIN RSA PRIVATE KEY-----",
+    "EXAMPLEEXAMPLEEXAMPLEEXAMPLEEXAMPLE",
+    "EXAMPLEEXAMPLEEXAMPLE",
+    "-----END RSA PRIVATE KEY-----",
+    "[10:14:05] boot: done"
+  ].join("\n");
+  runScan();
+});
+
+$("scan-btn").addEventListener("click", runScan);
+
+// Live scan: debounced re-scan on input while the toggle is on.
+let liveTimer = null;
+$("input-text").addEventListener("input", () => {
+  if (!$("live-toggle").checked) return;
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(runScan, 350);
+});
+$("live-toggle").addEventListener("change", () => {
+  if ($("live-toggle").checked && $("input-text").value.trim()) runScan();
+});
+
+// Ctrl/Cmd+Enter scans from inside the textarea.
+$("input-text").addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runScan();
+});
+
+// Initial theme: default to light
+setTheme("light");
+</script>
+</body>
+</html>
