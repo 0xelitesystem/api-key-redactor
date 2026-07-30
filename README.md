@@ -42,6 +42,10 @@ The whole tool is one HTML file with inline CSS and vanilla JavaScript. A list o
 
 Everything runs in your browser. Nothing you paste is uploaded, stored, or sent anywhere. There are no analytics, no external requests, and no third-party scripts, so the page works offline after a single load. You can verify with the network tab in your browser's developer tools: no requests are made.
 
+## More
+
+Part of a catalog of single-file browser tools and plain-language references, all MIT licensed and dependency-free: [0xelitesystem.github.io](https://0xelitesystem.github.io/). Built by [elitesystem.ai](https://elitesystem.ai).
+
 ## License
 
 MIT. Copyright 0xelitesystem 2026.
