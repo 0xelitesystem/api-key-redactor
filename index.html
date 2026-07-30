@@ -493,14 +493,22 @@ const DETECTORS = [
     id: "env-secret", label: ".env secret value", conf: "medium", group: 2,
     // .env style lines: UPPER_SNAKE key containing SECRET/TOKEN/KEY/PASSWORD.
     // Only the value (group 2) is redacted, the key name is kept.
-    re: /^([A-Z][A-Z0-9_]{2,})=([^\s#]{6,})/gmd,
+    // Allows the leading indentation and the "export " prefix that real .env
+    // and shell files use, and takes the value as either a quoted string (so
+    // passphrases with spaces are caught) or an unquoted run up to whitespace
+    // (so passwords containing "#" are caught).
+    re: /^[ \t]*(?:export[ \t]+)?([A-Z][A-Z0-9_]{2,})[ \t]*=[ \t]*("[^"\r\n]{6,}"|'[^'\r\n]{6,}'|[^\s]{6,})/gmd,
     ctx: (m) => /(SECRET|TOKEN|KEY|PASSWORD|PASSWD)/.test(m[1]) && !/PUBLIC/.test(m[1])
   },
   {
     id: "generic-secret", label: "Secret-looking assignment", conf: "medium", group: 2,
     // Suspicious variable names (password/secret/token/apikey/api_key and
     // friends) assigned a quoted value of 16+ chars. Value only (group 2).
-    re: /\b(password|passwd|pwd|secret|token|api[_-]?key|apikey|access[_-]?key|auth[_-]?token)[A-Za-z0-9_]*\s*[:=]\s*["']([^"'\r\n]{16,})["']/gid
+    // The name is matched without a leading word boundary so underscore
+    // compounds like DB_PASSWORD, client_secret and X_API_KEY are caught, and
+    // an optional closing quote before the separator covers JSON and YAML
+    // object keys such as "api_key": "...".
+    re: /(password|passwd|pwd|secret|token|api[_-]?key|apikey|access[_-]?key|auth[_-]?token)[A-Za-z0-9_]*["']?\s*[:=]\s*["']([^"'\r\n]{16,})["']/gid
   }
 ];
 
@@ -508,15 +516,30 @@ let currentText = "";
 let currentFindings = [];
 let redactedPlain = "";
 
-function lineOf(text, index) {
-  let line = 1;
-  for (let i = 0; i < index; i++) if (text.charCodeAt(i) === 10) line++;
-  return line;
+// Offsets of every newline in the text being scanned, built once per scan so
+// that line lookup is a binary search instead of a walk from the start of the
+// document. Without this a large paste with many findings costs
+// O(length x findings) and freezes the page for seconds.
+function newlineOffsets(text) {
+  const nl = [];
+  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) === 10) nl.push(i);
+  return nl;
+}
+
+// 1 + the number of newlines strictly before index.
+function lineOf(nl, index) {
+  let lo = 0, hi = nl.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (nl[mid] < index) lo = mid + 1; else hi = mid;
+  }
+  return lo + 1;
 }
 
 function scan(text) {
   const findings = [];
   const taken = [];
+  const nl = newlineOffsets(text);
   for (const det of DETECTORS) {
     det.re.lastIndex = 0;
     let m;
@@ -531,7 +554,7 @@ function scan(text) {
       findings.push({
         det, start, end,
         value: text.slice(start, end),
-        line: lineOf(text, start),
+        line: lineOf(nl, start),
         included: true
       });
     }
