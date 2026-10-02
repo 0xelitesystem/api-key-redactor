@@ -2,9 +2,18 @@
 
 Paste logs, code, config, or chat transcripts and get back a redacted copy with likely secrets replaced by labeled placeholders like `[REDACTED:aws-access-key]`. Built for the moment before you paste something into a bug report, a support ticket, or a chat. Single HTML file, no server, no tracking, no external dependencies.
 
-## Live demo
+**Live demo:** https://0xelitesystem.github.io/api-key-redactor/
 
-https://0xelitesystem.github.io/api-key-redactor/
+## Use
+
+1. Paste logs, code, config or a transcript into Input, or click Load example.
+2. Click Scan (or press Ctrl or Cmd plus Enter), or tick Live scan as I type.
+3. Review the findings table and untick any false positives.
+4. Click Copy redacted text or Download .txt.
+
+## Why this exists
+
+Secrets leak in the copy-paste moment: a log pasted into a bug report, a config pasted into a chat. Repo-side scanners never see that moment. This tool redacts likely secrets before you share. It is one HTML file with no tracking and no network calls, MIT licensed.
 
 ## Features
 
@@ -40,7 +49,20 @@ The whole tool is one HTML file with inline CSS and vanilla JavaScript. A list o
 
 ## Privacy
 
-Everything runs in your browser. Nothing you paste is uploaded, stored, or sent anywhere. There are no analytics, no external requests, and no third-party scripts, so the page works offline after a single load. You can verify with the network tab in your browser's developer tools: no requests are made.
+Everything runs in your browser. Nothing you paste is uploaded, stored, or sent anywhere. There are no analytics, no external requests, and no third-party scripts, so the page works offline after a single load. You can verify with the network tab in your browser's developer tools: no requests are made. The only thing the page stores is your light or dark theme choice, in localStorage under the key `theme`.
+
+## Run locally
+
+```
+git clone https://github.com/0xelitesystem/api-key-redactor
+cd api-key-redactor
+```
+
+Open `index.html` in any modern browser, or serve the folder with `python -m http.server 8000` and visit http://localhost:8000/.
+
+## Build
+
+No build step. The whole tool is one `index.html` file with inline CSS and JavaScript.
 
 ## More
 
